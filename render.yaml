@@ -3,7 +3,18 @@ services:
     name: high-profile-scraper
     env: node
     plan: free
-    buildCommand: "npx playwright install-deps && npx playwright install && npm install && npm run build"
+
+    buildCommand: |
+      apt-get update
+      apt-get install -y chromium
+      npm install
+      npx playwright install-deps
+      npx playwright install
+      npm run build
+
     startCommand: "npm start"
+
     envVars:
       PLAYWRIGHT_BROWSERS_PATH: "0"
+      PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium"
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
