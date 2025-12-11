@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: high-profile-scraper
+    env: node
+    plan: free
+    buildCommand: "npx playwright install-deps && npx playwright install && npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      PLAYWRIGHT_BROWSERS_PATH: "0"
