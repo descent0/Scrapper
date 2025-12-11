@@ -1,65 +1,149 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 
-export default function Home() {
+interface PersonData {
+  name: string;
+  googleSnippets: string[];
+  googleKnowledge: {
+    title: string;
+    subtitle: string;
+    description: string;
+    born: string;
+  };
+  wikipedia: {
+    extract: string;
+    title: string;
+    thumbnail: string | null;
+  };
+}
+
+export default function Page() {
+  const [name, setName] = useState("");
+  const [data, setData] = useState<PersonData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function search() {
+    if (!name.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/person?name=${encodeURIComponent(name)}`);
+      const result = await res.json();
+      setData(result.data);
+    } catch (error) {
+      console.error("Search failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+
+        {/* Search Box */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-blue-500 transition"
+              placeholder="Enter a person's name (e.g., Narendra Modi, Elon Musk)..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && search()}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <button
+              onClick={search}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-semibold text-lg transition shadow-lg"
+            >
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
         </div>
-      </main>
+
+        {/* Results */}
+        {data && (
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            {/* Header with Image */}
+            {data.wikipedia.title && (
+              <div className="flex items-start gap-6 mb-8">
+                {data.wikipedia.thumbnail && (
+                  <div className="flex-shrink-0">
+                    <img
+                      src={data.wikipedia.thumbnail}
+                      alt={data.wikipedia.title}
+                      className="w-32 h-32 object-cover rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h2 className="text-3xl font-bold text-gray-800">{data.wikipedia.title}</h2>
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Wikipedia</span>
+                  </div>
+                  {data.googleKnowledge.subtitle && (
+                    <p className="text-lg text-gray-600 mb-3 font-medium">{data.googleKnowledge.subtitle}</p>
+                  )}
+                  {data.googleKnowledge.born && (
+                    <p className="text-sm text-gray-500 mb-3">📅 Born: {data.googleKnowledge.born}</p>
+                  )}
+                  <p className="text-gray-700 leading-relaxed">{data.wikipedia.extract}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="border-t border-gray-200 my-8"></div>
+
+            {/* Google Knowledge Panel */}
+            {data.googleKnowledge.description && (
+              <>
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-2xl font-bold text-gray-800">Google Knowledge</h3>
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Live Data</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{data.googleKnowledge.description}</p>
+                </div>
+                <div className="border-t border-gray-200 my-8"></div>
+              </>
+            )}
+
+            {/* Google Snippets */}
+            {data.googleSnippets && data.googleSnippets.length > 0 && (
+              <>
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Key Information</h3>
+                  <div className="space-y-3">
+                    {data.googleSnippets.map((snippet, idx) => (
+                      <div key={idx} className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          {idx + 1}
+                        </div>
+                        <p className="text-gray-700 leading-relaxed flex-1">{snippet}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 my-8"></div>
+              </>
+            )}
+
+            {/* Download Button */}
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">📄 Export Report</h3>
+              <p className="text-gray-600 mb-6">Download a comprehensive PDF report with all the information above</p>
+              <a
+                href={`/api/pdf?name=${encodeURIComponent(name)}`}
+                className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-10 py-4 rounded-xl font-semibold text-lg transition shadow-lg hover:shadow-xl"
+              >
+                Download Full Report (PDF)
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
